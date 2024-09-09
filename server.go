@@ -44,7 +44,7 @@ func NewServer(address string, port int, opts ...Sopts) *Server {
 
 // retrievePathParameters retrieves the dynamic parameter from the defined [Route]
 // and associate a value extracted from the [url.URL]
-func RetrievePathParameters(route Route, url *url.URL) map[string]string {
+func RetrievePathParameters(route *Route, url *url.URL) map[string]string {
 	parametersValue := make(map[string]string)
 	pathParts := strings.Split(url.Path, "/")
 	for paramName, paramPos := range route.parametersPosition {
@@ -70,6 +70,10 @@ func (s *Server) HandleFunc(path string, middleware Middleware, handler Handler,
 	}
 	route.ParseDynamicPathParameters()
 	s.routes = append(s.routes, route)
+
+	// use middleware
+	wrappedHandler := middleware(handler)
+
 	// handle the route on the server
 	s.mux.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
 		if !slices.Contains(methods, req.Method) {
@@ -82,8 +86,13 @@ func (s *Server) HandleFunc(path string, middleware Middleware, handler Handler,
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				// TODO: log the error
 			}
+			return
 		}
-		handler(w, req, Parameters{})
+		parameters := RetrievePathParameters(route, req.URL)
+		if err := wrappedHandler(w, req, parameters); err != nil {
+			// TODO: log the error
+			fmt.Println(err)
+		}
 	})
 	return nil
 }

@@ -17,7 +17,7 @@ func TestRetrievePathParameters(t *testing.T) {
 		Path: "/test/{id}/test/{name}",
 	}
 	route.ParseDynamicPathParameters()
-	result := simplerest.RetrievePathParameters(route, &url.URL{
+	result := simplerest.RetrievePathParameters(&route, &url.URL{
 		Path: "/test/123/test/thomas",
 	})
 	expected := map[string]string{
