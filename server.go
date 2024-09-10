@@ -1,6 +1,7 @@
 package simplerest
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,34 +11,40 @@ import (
 
 // Server represents a RESTful server.
 type Server struct {
-	// The address to listen on.
-	Address string
-	// The port to listen on.
-	Port int
-	// The http server.
-	server *http.Server
-	// The http serve mux.
-	mux *http.ServeMux
-	// The routes handled by the server.
-	routes []*Route
+	Address string // The address to listen on.
+	Port    int    // The port to listen on.
+
+	// HTTP server and routing
+	HTTP struct {
+		Server *http.Server   // The HTTP server.
+		Mux    *http.ServeMux // The HTTP serve mux.
+		Routes []*Route       // The routes handled by the server.
+	}
+
+	// TLS/MTLS configuration
+	TLS struct {
+		Cert     string   // Server certificate filepath.
+		Key      string   // Certificate associated Key file
+		ClientCA []string // Client CA for mTLS communication.
+	}
 }
 
-// Sopts is a function that sets server options.
-type Sopts func(*Server)
+// sopts is a function that sets server options.
+type sopts func(any)
 
 // NewServer creates a new RESTful server.
-func NewServer(address string, port int, opts ...Sopts) *Server {
+func NewServer(address string, port int, opts ...sopts) *Server {
 	server := &Server{
 		Address: address,
 		Port:    port,
-		mux:     http.NewServeMux(),
 	}
 	for _, opt := range opts {
 		opt(server)
 	}
-	server.server = &http.Server{
+	server.HTTP.Mux = &http.ServeMux{}
+	server.HTTP.Server = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", address, port),
-		Handler: server.mux,
+		Handler: server.HTTP.Mux,
 	}
 	return server
 }
@@ -58,7 +65,7 @@ func RetrievePathParameters(route *Route, url *url.URL) map[string]string {
 // HandleFunc adds a route to the server.
 func (s *Server) HandleFunc(path string, middleware Middleware, handler Handler, methods ...string) error {
 	// check if the route already exists on the server
-	if slices.ContainsFunc(s.routes, func(r *Route) bool {
+	if slices.ContainsFunc(s.HTTP.Routes, func(r *Route) bool {
 		return r.Path == path
 	}) {
 		return &RouteAlreadyExists{
@@ -69,13 +76,15 @@ func (s *Server) HandleFunc(path string, middleware Middleware, handler Handler,
 		Path: path,
 	}
 	route.ParseDynamicPathParameters()
-	s.routes = append(s.routes, route)
+	s.HTTP.Routes = append(s.HTTP.Routes, route)
 
-	// use middleware
-	wrappedHandler := middleware(handler)
-
+	wrappedHandler := handler
+	// apply middleware if any
+	if middleware != nil {
+		wrappedHandler = middleware(handler)
+	}
 	// handle the route on the server
-	s.mux.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
+	s.HTTP.Mux.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
 		if !slices.Contains(methods, req.Method) {
 			if err := HttpWriteError(w, &RouteUnsupportedHttpMethod{
 				Method:           req.Method,
@@ -99,10 +108,32 @@ func (s *Server) HandleFunc(path string, middleware Middleware, handler Handler,
 
 // Serve launches the listening process of the [http.Server]
 func (s *Server) Serve() error {
-	return s.server.ListenAndServe()
+	// At least HTTPS server
+	if s.TLS.Cert != "" {
+		// check server certificates
+		cert, err := tls.LoadX509KeyPair(s.TLS.Cert, s.TLS.Key)
+		if err != nil {
+			return fmt.Errorf("no certificate could be loaded from this path: %v", err)
+		}
+
+		tlsConf := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}
+
+		// MTLS
+		if len(s.TLS.ClientCA) != 0 {
+			// check client certificates
+			// tlsConf.ClientCAs = s.TLS.ClientCA
+		}
+
+		s.HTTP.Server.TLSConfig = tlsConf
+		return s.HTTP.Server.ListenAndServeTLS("", "")
+	}
+	// default HTTP server
+	return s.HTTP.Server.ListenAndServe()
 }
 
 // Close stops the listening process of the [http.Server]
 func (s *Server) Close() error {
-	return s.server.Close()
+	return s.HTTP.Server.Close()
 }
