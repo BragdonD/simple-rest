@@ -13,7 +13,7 @@ import (
 	simplerest "github.com/BragdonD/simple-rest"
 )
 
-func TestServeTls(t *testing.T) {
+func TestWithHttps(t *testing.T) {
 	// create a server
 	server := simplerest.NewServer(
 		"localhost",
@@ -62,7 +62,7 @@ func TestServeTls(t *testing.T) {
 	}
 }
 
-func TestServeMtls(t *testing.T) {
+func TestWithMtls(t *testing.T) {
 	// create a server
 	server := simplerest.NewServer(
 		"localhost",
