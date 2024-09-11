@@ -25,7 +25,7 @@ func TestRetrievePathParameters(t *testing.T) {
 		"name": "thomas",
 	}
 	if diff := deep.Equal(expected, result); diff != nil {
-		t.Error(diff)
+		t.Fatal(diff)
 	}
 }
 
@@ -44,13 +44,13 @@ func TestServe(t *testing.T) {
 	client := &http.Client{}
 	resp, err := client.Get("http://localhost:9000/hello")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if strings.Compare(string(body), data) != 0 {
-		t.Error(fmt.Errorf("the data sent and received do not match, data: [%s], body: [%s]", data, string(body)))
+		t.Fatal(fmt.Errorf("the data sent and received do not match, data: [%s], body: [%s]", data, string(body)))
 	}
 }

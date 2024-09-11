@@ -18,6 +18,6 @@ func TestParseDynamicPathParameters(t *testing.T) {
 		"name": 3,
 	}
 	if diff := deep.Equal(params, expected); diff != nil {
-		t.Error(diff)
+		t.Fatal(diff)
 	}
 }

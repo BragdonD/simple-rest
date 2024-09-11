@@ -34,11 +34,11 @@ func TestWithHttps(t *testing.T) {
 	// create a https client
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	// load server ca
 	if caCertPEM, err := os.ReadFile("./test/ca/ca.crt"); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	} else if ok := certPool.AppendCertsFromPEM(caCertPEM); !ok {
 		panic("invalid cert in CA PEM")
 	}
@@ -51,14 +51,14 @@ func TestWithHttps(t *testing.T) {
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get("https://localhost:9000/hello")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if strings.Compare(string(body), data) != 0 {
-		t.Error(fmt.Errorf("the data sent and received do not match, data: [%s], body: [%s]", data, string(body)))
+		t.Fatal(fmt.Errorf("the data sent and received do not match, data: [%s], body: [%s]", data, string(body)))
 	}
 }
 
@@ -83,15 +83,15 @@ func TestWithMtls(t *testing.T) {
 	// create a https client
 	clientTLSCert, err := tls.LoadX509KeyPair("./test/certs/client.crt", "./test/certs/client.key")
 	if err != nil {
-		t.Errorf("Error loading certificate and key file: %v", err)
+		t.Fatalf("Error loading certificate and key file: %v", err)
 	}
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	// load server ca
 	if caCertPEM, err := os.ReadFile("./test/ca/ca.crt"); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	} else if ok := certPool.AppendCertsFromPEM(caCertPEM); !ok {
 		panic("invalid cert in CA PEM")
 	}
@@ -105,13 +105,13 @@ func TestWithMtls(t *testing.T) {
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get("https://localhost:9000/hello")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if strings.Compare(string(body), data) != 0 {
-		t.Error(fmt.Errorf("the data sent and received do not match, data: [%s], body: [%s]", data, string(body)))
+		t.Fatal(fmt.Errorf("the data sent and received do not match, data: [%s], body: [%s]", data, string(body)))
 	}
 }
