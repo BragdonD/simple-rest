@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	simplerest "github.com/BragdonD/simple-rest"
+	simplerest "github.com/bragdond/simple-rest"
 )
 
 func TestWithHttps(t *testing.T) {

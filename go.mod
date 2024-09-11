@@ -1,4 +1,4 @@
-module github.com/BragdonD/simple-rest
+module github.com/bragdond/simple-rest
 
 go 1.22.3
 

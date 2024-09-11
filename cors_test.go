@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	simplerest "github.com/BragdonD/simple-rest"
+	simplerest "github.com/bragdond/simple-rest"
 )
 
 func TestWithCors(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	simplerest "github.com/BragdonD/simple-rest"
+	simplerest "github.com/bragdond/simple-rest"
 	"github.com/go-test/deep"
 )
 
