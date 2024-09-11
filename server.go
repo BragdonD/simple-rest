@@ -23,6 +23,11 @@ type Server struct {
 		Routes []*Route       // The routes handled by the server.
 	}
 
+	CORS *struct {
+		AllowedOrigins []string
+		AllowedHeaders []string
+	}
+
 	// TLS/MTLS configuration
 	TLS struct {
 		Cert     string   // Server certificate filepath.
@@ -99,6 +104,15 @@ func (s *Server) HandleFunc(path string, middleware Middleware, handler Handler,
 			}
 			return
 		}
+
+		// Add CORS Headers
+		if s.CORS != nil {
+			w.Header().Set("Access-Control-Allow-Origin", strings.Join(s.CORS.AllowedOrigins, ", "))
+			w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ", "))
+			w.Header().Set("Access-Control-Allow-Headers", strings.Join(s.CORS.AllowedHeaders, ", "))
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
 		parameters := RetrievePathParameters(route, req.URL)
 		if err := wrappedHandler(w, req, parameters); err != nil {
 			// TODO: log the error
