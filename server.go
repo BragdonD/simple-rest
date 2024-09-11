@@ -2,9 +2,11 @@ package simplerest
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 )
@@ -123,7 +125,17 @@ func (s *Server) Serve() error {
 		// MTLS
 		if len(s.TLS.ClientCA) != 0 {
 			// check client certificates
-			// tlsConf.ClientCAs = s.TLS.ClientCA
+			caCertPool := x509.NewCertPool()
+			for _, caPath := range s.TLS.ClientCA {
+				if caCertPEM, err := os.ReadFile(caPath); err != nil {
+					return fmt.Errorf("error while reading file at path [%s]: %v", caPath, err)
+				} else if !caCertPool.AppendCertsFromPEM(caCertPEM) {
+					return fmt.Errorf("unable to add ca [%s] in cert pool", caPath)
+				}
+			}
+			tlsConf.ClientCAs = caCertPool
+			tlsConf.ClientAuth = tls.RequireAndVerifyClientCert
+			tlsConf.MinVersion = tls.VersionTLS12
 		}
 
 		s.HTTP.Server.TLSConfig = tlsConf

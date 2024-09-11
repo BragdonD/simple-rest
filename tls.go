@@ -14,7 +14,7 @@ func WithHttps(cert string, key string) sopts {
 
 // WithMtls is an option function that sets the server to check
 // the client certificate.
-func WithMtls(cert string, key string, ca []string) sopts {
+func WithMtls(cert string, key string, ca ...string) sopts {
 	return func(a any) {
 		s, ok := a.(*Server)
 		if ok {
